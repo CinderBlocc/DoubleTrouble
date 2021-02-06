@@ -5,12 +5,26 @@
 class DoubleTrouble : public BakkesMod::Plugin::BakkesModPlugin
 {
 private:
-    //std::shared_ptr<bool> bEnabled;
+    std::shared_ptr<bool> bEnabled;
+
+    uintptr_t PrimaryBallAddress = 0;
 
 public:
 	void onLoad() override;
 	void onUnload() override;
+    bool IsValid();
 
-    void OnCarHitBall();
-    void OnBallHitGoal();
+    void OnRoundStarted();
+    void OnCarHitBall(BallWrapper HitBall, void* Params);
+    void OnBallHitGoal(BallWrapper Ball, void* Params);
+
+    Vector GetRelativeVectorComponents(Rotator RootObjectRotation, Vector RootObjectVector, Vector RelativeObjectVector);
+};
+
+struct RecordCarHitParams
+{
+	uintptr_t HitCar; //CarWrapper
+	Vector HitLocation;
+	Vector HitNormal;
+	unsigned char HitType;
 };
