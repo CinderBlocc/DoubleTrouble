@@ -6,6 +6,7 @@ class DoubleTrouble : public BakkesMod::Plugin::BakkesModPlugin
 {
 private:
     std::shared_ptr<bool> bEnabled;
+    std::shared_ptr<bool> bShowPrimaryBall;
 
     uintptr_t PrimaryBallAddress = 0;
 
@@ -13,6 +14,8 @@ public:
 	void onLoad() override;
 	void onUnload() override;
     bool IsValid();
+
+    void Render(CanvasWrapper canvas);
 
     void OnRoundStarted();
     void OnCarHitBall(BallWrapper HitBall, void* Params);

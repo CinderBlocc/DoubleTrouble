@@ -8,16 +8,57 @@ void DoubleTrouble::onLoad()
 	using namespace std::placeholders;
 	
     bEnabled = std::make_shared<bool>(false);
+    bShowPrimaryBall = std::make_shared<bool>(false);
     cvarManager->registerCvar("DoubleTrouble_Enabled", "0", "Enable the DoubleTrouble plugin", true, true, 0, true, 1).bindTo(bEnabled);
+    cvarManager->registerCvar("DoubleTrouble_ShowPrimary", "0", "DoubleTrouble show which ball needs to be scored", true, true, 0, true, 1).bindTo(bShowPrimaryBall);
 
     gameWrapper->HookEventWithCallerPost<BallWrapper>("Function TAGame.Ball_TA.RecordCarHit", std::bind(&DoubleTrouble::OnCarHitBall, this, _1, _2));
     gameWrapper->HookEventWithCaller<BallWrapper>("Function TAGame.Ball_TA.OnHitGoal", std::bind(&DoubleTrouble::OnBallHitGoal, this, _1, _2));
     gameWrapper->HookEvent("Function GameEvent_Soccar_TA.Active.StartRound", std::bind(&DoubleTrouble::OnRoundStarted, this));
 
+    gameWrapper->RegisterDrawable(std::bind(&DoubleTrouble::Render, this, _1));
+
     //If loaded in the middle of a round, get the primary ball address
     OnRoundStarted();
 }
 void DoubleTrouble::onUnload() {}
+
+void DoubleTrouble::Render(CanvasWrapper canvas)
+{
+    if(!IsValid()) { return; }
+
+    if(!*bEnabled || !*bShowPrimaryBall || PrimaryBallAddress == 0) { return; }
+
+    CameraWrapper camera = gameWrapper->GetCamera();
+    if(camera.IsNull()) { return; }
+    ServerWrapper server = gameWrapper->GetCurrentGameState();
+    if(server.IsNull()) { return; }
+    ArrayWrapper<BallWrapper> Balls = server.GetGameBalls();
+    for(int i = 0; i < Balls.Count(); ++i)
+    {
+        BallWrapper Ball = Balls.Get(i);
+        if(Ball.IsNull()) { continue; }
+
+        if(Ball.memory_address == PrimaryBallAddress)
+        {
+            Vector BallLocation = Ball.GetLocation();
+            Vector CameraForward = RotatorToVector(camera.GetRotation());
+            Vector BallToCamera = (BallLocation - camera.GetLocation()).getNormalized();
+
+            //Ball is off screen
+            if(Vector::dot(BallToCamera, CameraForward) < .0f)
+            {
+                return;
+            }
+
+            Vector2 Projected = canvas.Project(BallLocation + Vector{0,0,150});
+            canvas.SetColor(LinearColor{0, 255, 0, 255});
+            canvas.FillTriangle(Projected + Vector2{-10, -10}, Projected + Vector2{10, -10}, Projected + Vector2{0, 10});
+
+            return;
+        }
+    }
+}
 
 bool DoubleTrouble::IsValid()
 {
