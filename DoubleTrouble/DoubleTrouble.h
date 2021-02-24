@@ -7,6 +7,7 @@ class DoubleTrouble : public BakkesMod::Plugin::BakkesModPlugin
 private:
     std::shared_ptr<bool> bEnabled;
     std::shared_ptr<bool> bShowPrimaryBall;
+    std::shared_ptr<bool> bDebugLog;
 
     uintptr_t PrimaryBallAddress = 0;
 
